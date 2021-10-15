@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 
 import logoImg from "../assets/images/logo.svg"
@@ -10,15 +10,24 @@ import { database } from "../services/firebase"
 
 import "../styles/room.scss"
 
-type BananaProps = {
+type RoomParams = {
     id: string;
 }
 
 export function Room() {
     const { user } = useAuth()
-    const params = useParams<BananaProps>()
-    const roomId = params.id
+    const params = useParams<RoomParams>()
     const [newQuestion, setNewQuestion] = useState("");
+
+    const roomId = params.id
+
+    useEffect(() => {
+        const roomRef = database.ref(`rooms/${roomId}`)
+
+        roomRef.once('value', room => {
+            console.log(room.val())
+        })
+    }, [roomId])
 
     async function handleSendQuestion(event: FormEvent){
         event.preventDefault()
@@ -36,8 +45,8 @@ export function Room() {
                 name: user?.name,
                 avatar: user.avatar,
             },
-            isHightLithed: false,
-            isAnswerde: false,
+            isHightlighted: false,
+            isAnswer: false,
         }
 
         await database.ref(`rooms/${roomId}/questions`).push(question)
