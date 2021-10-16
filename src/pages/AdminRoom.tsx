@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useHistory, useParams } from "react-router-dom"
 
 import logoImg from "../assets/images/logo.svg"
 import deleteImg from "../assets/images/delete.svg"
@@ -18,6 +18,7 @@ type RoomParams = {
 }
 
 export function AdminRoom() {
+    const history = useHistory()
     const { user } = useAuth()
     const params = useParams<RoomParams>()
     const [newQuestion, setNewQuestion] = useState("");
@@ -25,9 +26,18 @@ export function AdminRoom() {
 
     const { title, questions } = useRoom(roomId)
 
-    function handleDeleteQuestions(questionId: string){
-        if(confirm("Tem certeza que desejaexcluir está pergunta?")){
-            const questionRef = database.ref(`rooms/${roomId}/questions/${questionId}`).remove()
+    async function handleEndRoom(){
+        await database.ref(`rooms/${roomId}`).update({
+            endedAt: new Date(),
+        })
+
+        // await database.ref(`rooms/${roomId}`).remove() //remover a sala do firebase
+        history.push('/')
+    }
+
+    async function handleDeleteQuestion(questionId: string){
+        if (window.confirm("Tem certeza que você quer excluir esta pergunta?")) {
+            await database.ref(`rooms/${roomId}/questions/${questionId}`).remove()
         }
     }
 
@@ -38,7 +48,7 @@ export function AdminRoom() {
                     <img src={logoImg} alt="Letmeask" />
                     <div>
                         <RoomCode code={roomId}/>
-                        <Button isOutlined>Encerrar sala</Button>
+                        <Button isOutlined onClick={handleEndRoom}>Encerrar sala</Button>
                     </div>
                 </div>
             </header>
@@ -57,12 +67,12 @@ export function AdminRoom() {
                                 content={question.content}
                                 author={question.author}
                             >
-                                <button
+                            <button
                                     type="button"
-                                    onClick={() => handleDeleteQuestions}
-                                >
-                                    <img src={deleteImg} alt="Remover pergunta" />
-                                </button>
+                                    onClick={() => handleDeleteQuestion(question.id)}
+                            >
+                                <img src={deleteImg} alt="Remover pergunta" />
+                            </button>
                             </Question>
                         )
                     })}
